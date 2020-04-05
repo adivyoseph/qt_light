@@ -7,7 +7,7 @@ tested with mosquetto broker
 
 uses mosquetto library
 
-#Steps to use
+# Steps to use
 * open __config__ to set _subcribe topics_
   * __Room name:__ location of the light (only switches in this room can control this light)
   * __Primary Switch name:__ must be unique (entrance, master, readingLight, ...)
