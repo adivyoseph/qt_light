@@ -27,14 +27,17 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    mqtt_sub.cpp
+    mqtt_sub.cpp \
+    lightconfig.cpp
 
 HEADERS += \
         mainwindow.h \
-    mqtt_sub.h
+    mqtt_sub.h \
+    lightconfig.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    lightconfig.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

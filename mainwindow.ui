@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>MQTT Light</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QWidget" name="verticalLayoutWidget">
@@ -19,15 +19,15 @@
      <rect>
       <x>80</x>
       <y>40</y>
-      <width>160</width>
+      <width>184</width>
       <height>134</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QLineEdit" name="lineEdit">
+      <widget class="QLabel" name="labelTopic">
        <property name="text">
-        <string>masterbedroom/master_light</string>
+        <string>Run Configure</string>
        </property>
       </widget>
      </item>
@@ -87,6 +87,13 @@
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuConfigure">
+    <property name="title">
+     <string>Configure</string>
+    </property>
+    <addaction name="actionConfigure"/>
+   </widget>
+   <addaction name="menuConfigure"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -97,6 +104,11 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionConfigure">
+   <property name="text">
+    <string>Configure</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

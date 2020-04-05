@@ -62,19 +62,43 @@ struct mosquitto_message{
 void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg, const mosquitto_property *properties){
     char *pchar = (char *) msg->payload;
     MQTT_sub * pthis = (MQTT_sub * ) obj;
+    QString topicSwitch;
+    QString topicLevel;
+    QString topicSwitchSec;
+
+    topicSwitch = QString("%1\\%2").arg(pthis->stringRoom, pthis->stringPri);
+
+    topicSwitchSec = QString("%1\\%2").arg(pthis->stringRoom, pthis->stringSec);
+    topicLevel = QString("%1\\%2_level").arg(pthis->stringRoom, pthis->stringPri);
+
 
     qDebug() << "message_callback " << msg->topic << "len " << msg->payloadlen;
+    qDebug() << "    topicSwitch  " << topicSwitch.toStdString().c_str();
+    //only get here when connected
+
+
 
     // topic
-    if( strcmp("bedroom/main_switch_level",msg->topic) == 0){
+    if( strcmp(topicLevel.toStdString().c_str(),msg->topic) == 0){
+        //qDebug() << "   level ";
         int value = atoi(pchar);
         if(value <= 100){
             emit pthis->mqtt_switch_level(value);
         }
     }
-    else if(strcmp("bedroom/main_switch",msg->topic) == 0){
+    else if(strcmp(topicSwitch.toStdString().c_str(),msg->topic) == 0){
         if(msg->payloadlen == 3){
             emit pthis->mqtt_switch_event(1);
+        }
+        else {
+            emit pthis->mqtt_switch_event(0);
+        }
+    }
+    else if(strcmp(topicSwitchSec.toStdString().c_str(),msg->topic) ==0){
+        //any state of master cause slave to go off
+        if(msg->payloadlen == 3){
+            // ignore master on
+            //emit pthis->mqtt_switch_event(1);
         }
         else {
             emit pthis->mqtt_switch_event(0);
@@ -102,6 +126,14 @@ int MQTT_sub::mqtt_connect(){
     int mid = 5;
     qDebug() <<  "mqtt_connect";
 
+    QString topicSwitch;
+    QString topicLevel;
+    QString topicSwitchSec;
+    MainWindow * MainP = ((MainWindow *) pMainWindow);
+
+    topicSwitch = QString("%1\\%2").arg(MainP->getConfigRoom(), MainP->getConfigPri());
+    topicSwitchSec = QString("%1\\%2").arg(MainP->getConfigRoom(), MainP->getConfigSec());
+    topicLevel = QString("%1\\%2_level").arg(MainP->getConfigRoom(), MainP->getConfigPri());
 
 
     rc = mosquitto_connect_bind_v5(mosq, (const char *) host.c_str(), port, host.size(), (const char *) host.c_str(), nullptr);
@@ -112,8 +144,12 @@ int MQTT_sub::mqtt_connect(){
     else{
         qDebug() <<  "mosquitto_connect_bind_v5";
         state = 1;
-        rc = mosquitto_subscribe_v5(mosq, nullptr,  "bedroom/main_switch_level", 0, 0, nullptr);
-        rc = mosquitto_subscribe_v5(mosq, nullptr,  "bedroom/main_switch", 0, 0, nullptr);
+        rc = mosquitto_subscribe_v5(mosq, nullptr,  topicSwitch.toStdString().c_str(), 0, 0, nullptr);
+        rc = mosquitto_subscribe_v5(mosq, nullptr,  topicLevel.toStdString().c_str(), 0, 0, nullptr);
+        if(MainP->getConfigSec().size()){
+                rc = mosquitto_subscribe_v5(mosq, nullptr,  topicSwitchSec.toStdString().c_str(), 0, 0, nullptr);
+        }
+
         qDebug() <<  "subscribe_v5" << rc;
         mosquitto_loop_start(mosq);
 
@@ -132,6 +168,16 @@ int MQTT_sub::mqtt_disconnect(){
          state = 0;
     }
     return rc;
+}
+
+void MQTT_sub::mqtt_setRoom(QString room){
+    stringRoom = room;
+}
+void MQTT_sub::mqtt_setPri(QString pri){
+    stringPri = pri;
+}
+void MQTT_sub::mqtt_setSec(QString sec){
+    stringSec = sec;
 }
 
 
