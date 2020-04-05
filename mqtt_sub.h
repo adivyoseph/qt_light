@@ -22,24 +22,29 @@ public:
    void setMainWindow(void *);
    int mqtt_connect();
    int mqtt_disconnect();
+   void mqtt_publish(int);
 
    void mqtt_setRoom(QString room);
-   void mqtt_setPri(QString pri);
-   void mqtt_setSec(QString sec);
+   QString mqtt_getRoom();
+   void mqtt_setLight(QString name);
+   QString  mqtt_getLight();
 
-   QString stringRoom;
-   QString stringPri;
-   QString stringSec;
+   void mqtt_set_connect_state(int);
+
+
 
 signals:
    void mqtt_switch_event(int);
    void mqtt_switch_level(int);
+   void mqtt_connect_event(int);
 
 private:
 
     struct mosquitto *mosq;
+    QString stringRoom;
+    QString stringLight;
 
-    int state = 0;
+    int connect_state = 0;
     int port  = 1883;
     std::string host;
 

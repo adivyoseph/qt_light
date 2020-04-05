@@ -18,7 +18,9 @@ MQTT_sub::MQTT_sub()
 
 }
 
-
+void MQTT_sub::mqtt_set_connect_state(int state){
+    connect_state = state;
+}
 
 
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags, const mosquitto_property *properties)
@@ -28,10 +30,11 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flag
     UNUSED(mosq);
     UNUSED(flags);
     UNUSED(properties);
-   MQTT_sub * pthis = (MQTT_sub * ) obj;
+    MQTT_sub * pthis = (MQTT_sub * ) obj;
 
     qDebug() << "connect_callback " << result;
-    //pthis->pm_set_state(1);
+    pthis->mqtt_set_connect_state(1);
+    emit pthis->mqtt_connect_event(1);
 
 }
 
@@ -44,8 +47,8 @@ void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc, const mos
     MQTT_sub * pthis = (MQTT_sub * ) obj;
 
     qDebug() << "disconnect_callback " << rc;
-    //pthis->pm_set_state(0);
-    //mosquitto_unsubscribe_v5(mosq, NULL, cfg.unsub_topics[i], cfg.unsubscribe_props);
+    pthis->mqtt_set_connect_state(0);
+    emit pthis->mqtt_connect_event(0);
 
 }
 
@@ -64,16 +67,12 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
     MQTT_sub * pthis = (MQTT_sub * ) obj;
     QString topicSwitch;
     QString topicLevel;
-    QString topicSwitchSec;
 
-    topicSwitch = QString("%1\\%2").arg(pthis->stringRoom, pthis->stringPri);
-
-    topicSwitchSec = QString("%1\\%2").arg(pthis->stringRoom, pthis->stringSec);
-    topicLevel = QString("%1\\%2_level").arg(pthis->stringRoom, pthis->stringPri);
+    topicSwitch = QString("%1\\%2_switch").arg(pthis->mqtt_getRoom(), pthis->mqtt_getLight());
+    topicLevel  = QString("%1\\%2_level").arg(pthis->mqtt_getRoom(), pthis->mqtt_getLight());
 
 
     qDebug() << "message_callback " << msg->topic << "len " << msg->payloadlen;
-    qDebug() << "    topicSwitch  " << topicSwitch.toStdString().c_str();
     //only get here when connected
 
 
@@ -87,25 +86,8 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
         }
     }
     else if(strcmp(topicSwitch.toStdString().c_str(),msg->topic) == 0){
-        if(msg->payloadlen == 3){
             emit pthis->mqtt_switch_event(1);
-        }
-        else {
-            emit pthis->mqtt_switch_event(0);
-        }
     }
-    else if(strcmp(topicSwitchSec.toStdString().c_str(),msg->topic) ==0){
-        //any state of master cause slave to go off
-        if(msg->payloadlen == 3){
-            // ignore master on
-            //emit pthis->mqtt_switch_event(1);
-        }
-        else {
-            emit pthis->mqtt_switch_event(0);
-        }
-    }
-
-
 }
 
 
@@ -120,6 +102,20 @@ void MQTT_sub::setMainWindow(void * pointer){
     //QObject::connect(this, SIGNAL(mqtt_switch_event), (MainWindow *)pMainWindow, SLOT(MainWindow::mqtt_switch_event));
 }
 
+void  MQTT_sub::mqtt_publish(int state){
+    int mid = 5;
+    int rc =1;
+    QString topic = QString("%1\\%2_light").arg(stringRoom, stringLight);
+    QString msg  = QString("%1").arg(state);
+
+    qDebug() <<  "mqtt_pubSwitch state  " << connect_state;
+    if(connect_state)
+    {
+        rc = mosquitto_publish_v5(mosq, &mid, topic.toStdString().c_str(), msg.size(), msg.toStdString().c_str(), 0, 0, nullptr);
+        qDebug() <<  "mqtt_pub rc " << rc;
+    }
+}
+
 
 int MQTT_sub::mqtt_connect(){
     int rc;
@@ -128,12 +124,9 @@ int MQTT_sub::mqtt_connect(){
 
     QString topicSwitch;
     QString topicLevel;
-    QString topicSwitchSec;
-    MainWindow * MainP = ((MainWindow *) pMainWindow);
 
-    topicSwitch = QString("%1\\%2").arg(MainP->getConfigRoom(), MainP->getConfigPri());
-    topicSwitchSec = QString("%1\\%2").arg(MainP->getConfigRoom(), MainP->getConfigSec());
-    topicLevel = QString("%1\\%2_level").arg(MainP->getConfigRoom(), MainP->getConfigPri());
+    topicSwitch = QString("%1\\%2_switch").arg(stringRoom, stringLight);
+    topicLevel = QString("%1\\%2_level").arg(stringRoom, stringLight);
 
 
     rc = mosquitto_connect_bind_v5(mosq, (const char *) host.c_str(), port, host.size(), (const char *) host.c_str(), nullptr);
@@ -143,12 +136,8 @@ int MQTT_sub::mqtt_connect(){
     }
     else{
         qDebug() <<  "mosquitto_connect_bind_v5";
-        state = 1;
         rc = mosquitto_subscribe_v5(mosq, nullptr,  topicSwitch.toStdString().c_str(), 0, 0, nullptr);
         rc = mosquitto_subscribe_v5(mosq, nullptr,  topicLevel.toStdString().c_str(), 0, 0, nullptr);
-        if(MainP->getConfigSec().size()){
-                rc = mosquitto_subscribe_v5(mosq, nullptr,  topicSwitchSec.toStdString().c_str(), 0, 0, nullptr);
-        }
 
         qDebug() <<  "subscribe_v5" << rc;
         mosquitto_loop_start(mosq);
@@ -161,11 +150,21 @@ int MQTT_sub::mqtt_connect(){
 
 int MQTT_sub::mqtt_disconnect(){
     int rc = 0;
-    if(state){
+    int mid = 5;
+    QString topicSwitch;
+    QString topicLevel;
+
+    topicSwitch = QString("%1\\%2_switch").arg(stringRoom, stringLight);
+    topicLevel = QString("%1\\%2_level").arg(stringRoom, stringLight);
+
+    if(connect_state){
          mosquitto_loop_stop(mosq, true);
+         //
+         rc = mosquitto_unsubscribe_v5(mosq, nullptr,  topicSwitch.toStdString().c_str(),  nullptr);
+         rc = mosquitto_unsubscribe_v5(mosq, nullptr,  topicLevel.toStdString().c_str(),  nullptr);
          rc =mosquitto_disconnect(mosq);
          qDebug() <<  "mosquitto_disconnect rc " << rc;
-         state = 0;
+         //state = 0;
     }
     return rc;
 }
@@ -173,12 +172,19 @@ int MQTT_sub::mqtt_disconnect(){
 void MQTT_sub::mqtt_setRoom(QString room){
     stringRoom = room;
 }
-void MQTT_sub::mqtt_setPri(QString pri){
-    stringPri = pri;
+
+void MQTT_sub::mqtt_setLight(QString light){
+    stringLight = light;
 }
-void MQTT_sub::mqtt_setSec(QString sec){
-    stringSec = sec;
+
+QString MQTT_sub::mqtt_getLight(){
+    return stringLight;
 }
+
+QString MQTT_sub::mqtt_getRoom(){
+    return stringRoom;
+}
+
 
 
 

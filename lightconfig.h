@@ -15,8 +15,7 @@ public:
     explicit LightConfig(QWidget *parent = nullptr);
     ~LightConfig();
     QString getRoomName();
-    QString getSwitchPri();
-    QString getSwitchSec();
+    QString getLightName();
     int     getConfigSet();
 
 signals:
@@ -25,15 +24,14 @@ signals:
 private slots:
     void on_lineEditRoom_textChanged(const QString &arg1);
 
-    void on_lineEditPrimary_textChanged(const QString &arg1);
+    void on_lineEditLight_textChanged(const QString &arg1);
 
-    void on_lineEditSecondary_textChanged(const QString &arg1);
 
 private:
     Ui::LightConfig *ui;
     int nameSet;
-    int PrimarySet;
-    int SecondarySet;
+    int LightSet;
+
 };
 
 #endif // LIGHTCONFIG_H

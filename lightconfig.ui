@@ -52,20 +52,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Primary Switch:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="labelSecondary">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>110</y>
-     <width>131</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Secondary Switch:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>Let set:</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="lineEditRoom">
@@ -78,21 +65,11 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEditPrimary">
+  <widget class="QLineEdit" name="lineEditLight">
    <property name="geometry">
     <rect>
      <x>190</x>
      <y>70</y>
-     <width>191</width>
-     <height>25</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="lineEditSecondary">
-   <property name="geometry">
-    <rect>
-     <x>190</x>
-     <y>110</y>
      <width>191</width>
      <height>25</height>
     </rect>
