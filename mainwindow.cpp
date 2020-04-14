@@ -89,7 +89,7 @@ void MainWindow::on_actionConfigure_triggered()
 }
 
 void MainWindow::on_configChanged(){
-    QString text = QString("%1\\%2").arg(configDialog.getRoomName(), configDialog.getLightName());
+    QString text = QString("%1//%2").arg(configDialog.getRoomName(), configDialog.getLightName());
 
     ui->labelTopic->setText(text );
 }
